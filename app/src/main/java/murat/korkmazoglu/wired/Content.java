@@ -2,143 +2,110 @@ package murat.korkmazoglu.wired;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.graphics.Bitmap;
+
+import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 
-public class Content extends Activity {
-    private WebView webView;
-    private CustomWebViewClient webViewClient;
-    private String url = null;
-    ProgressDialog mProgressDialog;
+import com.squareup.picasso.Picasso;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+
+public class Content extends AppCompatActivity {
+
+    private String link, image, title;
+    ProgressDialog progressDialog;
+    private List<String> paragraf;
+    private LinearLayout linearLayout;
+    private LinearLayout.LayoutParams llp;
+    private TextView titleText;
+    private ImageView imageView;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        url=getIntent().getStringExtra("link");
-        mProgressDialog = new ProgressDialog(this);//ProgressDialog objesi oluşturuyoruz
-        mProgressDialog.setMessage("Yükleniyor...");//ProgressDialog Yükleniyor yazısı
 
-        webViewClient = new CustomWebViewClient();//CustomWebViewClient classdan webViewClient objesi oluşturuyoruz
 
-        webView = new WebView(getApplicationContext());//webview mızı xml anasayfa.xml deki webview bağlıyoruz
-        webView.getSettings().setBuiltInZoomControls(true); //zoom yapılmasına izin verir
-        webView.getSettings().setSupportZoom(true);
-        webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
-        webView.getSettings().setAllowFileAccess(true);
-        webView.getSettings().setDomStorageEnabled(true);
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.setWebViewClient(webViewClient); //oluşturduğumuz webViewClient objesini webViewımıza set ediyoruz
-        webView.loadUrl(url);
-        setContentView(webView);
+        setContentView(R.layout.content_layout);
+        new FetchTitle().execute();
+
+        linearLayout = (LinearLayout) findViewById(R.id.linearLayout);
+        imageView = (ImageView) findViewById(R.id.myImageView);
+        titleText = (TextView) findViewById(R.id.tv_title);
+        llp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        llp.setMargins(10, 10, 10, 10);
+
+        link = getIntent().getStringExtra("link");
+        image = getIntent().getStringExtra("image");
+        Log.d("IMAGE",image.toString());
+        title = getIntent().getStringExtra("title");
+        titleText.setText(title);
+        Picasso.with(Content.this).load(image).fit().into(imageView);
+        paragraf = new ArrayList<String>();
+
     }
-    private class CustomWebViewClient extends WebViewClient {
-        //Alttaki methodların hepsini kullanmak zorunda deilsiniz
-        //Hangisi işinize yarıyorsa onu kullanabilirsiniz.
-        @Override
-        public void onPageStarted(WebView view, String url, Bitmap favicon) { //Sayfa yüklenirken çalışır
-            super.onPageStarted(view, url, favicon);
 
-            if(!mProgressDialog.isShowing())//mProgressDialog açık mı kontrol ediliyor
-            {
-                mProgressDialog.show();//mProgressDialog açık değilse açılıyor yani gösteriliyor ve yükleniyor yazısı çıkıyor
+    private class FetchTitle extends AsyncTask<String, String, List<String>> {
+
+        @Override
+        protected List<String> doInBackground(String... strings) {
+            try {
+
+                Document doc = Jsoup.connect(link).get();
+                Elements info = doc.select("p[data-reactid]");
+                for (Element p : info)
+                    paragraf.add(p.text().toString());
+
+            } catch (IOException ex) {
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
+            publishProgress("Makaleler Okunuyor...");
+            return paragraf;
         }
 
         @Override
-        public void onPageFinished(WebView view, String url) {//sayfamız yüklendiğinde çalışıyor.
-            super.onPageFinished(view, url);
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = ProgressDialog.show(Content.this, "Lütfen Bekleyiniz", "İşlem Devam Ediyor", true);
+        }
 
-            if(mProgressDialog.isShowing()){//mProgressDialog açık mı kontrol
-                mProgressDialog.dismiss();//mProgressDialog açıksa kapatılıyor
+        @Override
+        protected void onPostExecute(List<String> strings) {
+            super.onPostExecute(strings);
+            for (int i = 0; i < strings.size(); i++) {
+                TextView textView = new TextView(Content.this);
+                textView.setText(strings.get(i));
+                textView.setLayoutParams(llp);
+                textView.setTextColor(Color.BLACK);
+                linearLayout.addView(textView);
             }
+            progressDialog.cancel();
         }
 
         @Override
-        public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            // Bu method açılan sayfa içinden başka linklere tıklandığında açılmasına yarıyor.
-            //Bu methodu override etmez yada edip içini boş bırakırsanız ilk url den açılan sayfa dışında başka sayfaya geçiş yapamaz
-
-            view.loadUrl(url);//yeni tıklanan url i açıyor
-            return true;
-        }
-
-        @Override
-        public void onReceivedError(WebView view, int errorCode,String description, String failingUrl) {
-            //BU method webview yüklenirken herhangi bir hatayla karşilaşilırsa hata kodu dönüyor.
-            //Dönen hata koduna göre kullanıcıyı bilgilendirebilir yada gerekli işlemleri yapabilirsiniz
-            //errorCode ile hatayı alabilirsiniz
-            //	if(errorCode==-8){
-            // Timeout
-            //	} şeklinde kullanabilirsiniz
-
-            //Hata Kodları aşağıdadır...
-
-     	/*
-      *  /** Generic error
-     public static final int ERROR_UNKNOWN = -1;
-
-     /** Server or proxy hostname lookup failed
-     public static final int ERROR_HOST_LOOKUP = -2;
-
-     /** Unsupported authentication scheme (not basic or digest)
-     public static final int ERROR_UNSUPPORTED_AUTH_SCHEME = -3;
-
-     /** User authentication failed on server
-     public static final int ERROR_AUTHENTICATION = -4;
-
-     /** User authentication failed on proxy
-     public static final int ERROR_PROXY_AUTHENTICATION = -5;
-
-     /** Failed to connect to the server
-     public static final int ERROR_CONNECT = -6;
-
-     /** Failed to read or write to the server
-     public static final int ERROR_IO = -7;
-
-     /** Connection timed out
-     public static final int ERROR_TIMEOUT = -8;
-
-     /** Too many redirects
-     public static final int ERROR_REDIRECT_LOOP = -9;
-
-     /** Unsupported URI scheme
-     public static final int ERROR_UNSUPPORTED_SCHEME = -10;
-
-     /** Failed to perform SSL handshake
-     public static final int ERROR_FAILED_SSL_HANDSHAKE = -11;
-
-     /** Malformed URL
-     public static final int ERROR_BAD_URL = -12;
-
-     /** Generic file error
-     public static final int ERROR_FILE = -13;
-
-     /** File not found
-     public static final int ERROR_FILE_NOT_FOUND = -14;
-
-     /** Too many requests during this load
-     public static final int ERROR_TOO_MANY_REQUESTS = -15;
-     	*/
-
+        protected void onProgressUpdate(String... values) {
+            super.onProgressUpdate(values);
+            progressDialog.setMessage(values[0]);
         }
     }
-    public void onBackPressed() //Android Back Buttonunu Handle ettik. Back butonu bir önceki sayfaya geri dönecek
-    {
-        if(webView.canGoBack()){//eğer varsa bir önceki sayfaya gidecek
-            webView.goBack();
-        }else{//Sayfa yoksa uygulamadan çıkacak
-            super.onBackPressed();
-        }
-    }
-
 
 }

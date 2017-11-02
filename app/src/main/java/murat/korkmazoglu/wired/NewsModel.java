@@ -7,7 +7,7 @@ public class NewsModel {
     private String date;
     private String creator;
     private String link;
-    private Bitmap image;
+    private String image;
 
 
     public String getTitle() {
@@ -42,11 +42,11 @@ public class NewsModel {
         this.link = link;
     }
 
-    public Bitmap getImage() {
+    public String getImage() {
         return image;
     }
 
-    public void setImage(Bitmap image) {
+    public void setImage(String image) {
         this.image = image;
     }
 }

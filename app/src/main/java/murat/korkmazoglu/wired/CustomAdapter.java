@@ -11,6 +11,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.squareup.picasso.Picasso;
+
+import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -20,7 +23,7 @@ import java.util.List;
  * Created by kiosk on 07/12/2016.
  */
 
-public class CustomAdapter extends BaseAdapter {
+public class CustomAdapter extends BaseAdapter{
 
     private Context context;
     private List<NewsModel> modelList;
@@ -62,8 +65,8 @@ public class CustomAdapter extends BaseAdapter {
         Date date = new Date(model.getDate());
         DateFormat df = new SimpleDateFormat("dd.MM.yyyy");
 
+        Picasso.with(context).load(model.getImage()).fit().into(resim);
 
-        resim.setImageBitmap(model.getImage());
         title.setText(model.getTitle());
         date_and_creator.
                 setText(String.format("%02d:%02d", date.getHours(), date.getMinutes()) + " | " +
@@ -73,16 +76,20 @@ public class CustomAdapter extends BaseAdapter {
         rootView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                linkiAc(model.getLink());
+                linkiAc(model.getTitle(),model.getImage(),model.getLink());
             }
         });
 
         return rootView;
     }
 
-    private void linkiAc(String link) {
+    private void linkiAc(String title,String image,String link) {
+
         Intent intent = new Intent(context, Content.class);
+        intent.putExtra("title", title);
+        intent.putExtra("image", image);
         intent.putExtra("link", link);
+
         context.startActivity(intent);
     }
 }

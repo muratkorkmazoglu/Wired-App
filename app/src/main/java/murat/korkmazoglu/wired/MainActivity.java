@@ -7,6 +7,7 @@ import android.os.AsyncTask;
 import android.provider.DocumentsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -74,40 +75,44 @@ public class MainActivity extends AppCompatActivity {
                         NodeList nodeListDate = element.getElementsByTagName("pubDate");
                         NodeList nodeListCreator = element.getElementsByTagName("dc:creator");
                         NodeList nodeListDescription = element.getElementsByTagName("description");
+                        NodeList nodeListMedia = element.getElementsByTagName("media:thumbnail");
 
                         String title = nodeListTitle.item(0).getFirstChild().getNodeValue();
                         String link = nodeListLink.item(0).getFirstChild().getNodeValue();
                         String date = nodeListDate.item(0).getFirstChild().getNodeValue();
                         String creator = nodeListCreator.item(0).getFirstChild().getNodeValue();
                         String description = nodeListDescription.item(0).getFirstChild().getNodeValue();
+                        String media = nodeListMedia.item(0).getAttributes().getNamedItem("url").getNodeValue();
+                        //Log.d("MEDİA",media.toString());
 
                         NewsModel model = new NewsModel();
                         model.setTitle(title);
                         model.setCreator(creator);
                         model.setLink(link);
                         model.setDate(date);
+                        model.setImage(media);
 
-                        Pattern p = Pattern.compile(".*<img[^>]*src=\"([^\"]*)", Pattern.CASE_INSENSITIVE);
-                        Matcher m = p.matcher(description);
-                        String photoUrl = null;
-
-                        while (m.find()) {
-                            photoUrl = m.group(1);
-                            Bitmap bitmap = null;
-
-                            try {
-                                URL urlResim = new URL(photoUrl.toString().trim());
-                                InputStream is = urlResim.openConnection().getInputStream();
-                                bitmap = BitmapFactory.decodeStream(is);
-
-                            } catch (MalformedURLException e) {
-                                e.printStackTrace();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-
-                            model.setImage(bitmap);
-                        }
+//                        Pattern p = Pattern.compile(".*<img[^>]*src=\"([^\"]*)", Pattern.CASE_INSENSITIVE);
+//                        Matcher m = p.matcher(media);
+//                        String photoUrl = null;
+//
+//                        while (m.find()) {
+//                            photoUrl = m.group(1);
+//                            Bitmap bitmap = null;
+//
+//                            try {
+//                                URL urlResim = new URL(photoUrl.toString().trim());
+//                                InputStream is = urlResim.openConnection().getInputStream();
+//                                bitmap = BitmapFactory.decodeStream(is);
+//
+//                            } catch (MalformedURLException e) {
+//                                e.printStackTrace();
+//                            } catch (IOException e) {
+//                                e.printStackTrace();
+//                            }
+//
+//                            model.setImage(bitmap);
+//                        }
                         modelList.add(model);
                         publishProgress("Liste Güncelleniyor...");
                     }
