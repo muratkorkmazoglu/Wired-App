@@ -3,9 +3,11 @@ package murat.korkmazoglu.wired;
 import android.app.Activity;
 import android.app.ProgressDialog;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -25,7 +27,13 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 
 public class Content extends AppCompatActivity {
@@ -37,6 +45,7 @@ public class Content extends AppCompatActivity {
     private LinearLayout.LayoutParams llp;
     private TextView titleText;
     private ImageView imageView;
+    private String currentLine;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,20 +64,19 @@ public class Content extends AppCompatActivity {
 
         link = getIntent().getStringExtra("link");
         image = getIntent().getStringExtra("image");
-        Log.d("IMAGE",image.toString());
+        Log.d("IMAGE", image.toString());
         title = getIntent().getStringExtra("title");
         titleText.setText(title);
         Picasso.with(Content.this).load(image).fit().into(imageView);
-        paragraf = new ArrayList<String>();
 
     }
 
-    private class FetchTitle extends AsyncTask<String, String, List<String>> {
+    class FetchTitle extends AsyncTask<String, String, List<String>> {
 
         @Override
         protected List<String> doInBackground(String... strings) {
             try {
-
+                paragraf = new ArrayList<String>();
                 Document doc = Jsoup.connect(link).get();
                 Elements info = doc.select("p[data-reactid]");
                 for (Element p : info)
@@ -79,6 +87,7 @@ public class Content extends AppCompatActivity {
                 e.printStackTrace();
             }
             publishProgress("Makaleler Okunuyor...");
+
             return paragraf;
         }
 
@@ -89,8 +98,9 @@ public class Content extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(List<String> strings) {
+        protected void onPostExecute(final List<String> strings) {
             super.onPostExecute(strings);
+
             for (int i = 0; i < strings.size(); i++) {
                 TextView textView = new TextView(Content.this);
                 textView.setText(strings.get(i));
@@ -99,6 +109,9 @@ public class Content extends AppCompatActivity {
                 linearLayout.addView(textView);
             }
             progressDialog.cancel();
+            Count();
+
+
         }
 
         @Override
@@ -106,6 +119,44 @@ public class Content extends AppCompatActivity {
             super.onProgressUpdate(values);
             progressDialog.setMessage(values[0]);
         }
+    }
+
+    public void Count() {
+
+        String currentLine = "";
+        HashMap<String, Integer> wordCountMap = new HashMap<String, Integer>();
+
+        for (int i = 0; i < paragraf.size(); i++) {
+            currentLine += paragraf.get(i);
+        }
+        System.out.println(currentLine.toString());
+
+            String[] words = currentLine.toLowerCase().split(" ");
+
+            for (String word : words) {
+                if (word.length() > 2) {
+                    if (wordCountMap.containsKey(word)) {
+                        wordCountMap.put(word, wordCountMap.get(word) + 1);
+                    } else {
+                        wordCountMap.put(word, 1);
+                    }
+                }
+            }
+
+        int count = 0;
+        String mostRepeatedWord = null;
+        Set<Entry<String, Integer>> entrySet = wordCountMap.entrySet();
+
+        for (Entry<String, Integer> entry : entrySet) {
+            if (entry.getValue() > count) {
+                mostRepeatedWord = entry.getKey();
+                count = entry.getValue();
+            }
+        }
+
+        System.out.println("The most repeated word in input file is : " + mostRepeatedWord);
+
+        System.out.println("Number Of Occurrences : " + count);
     }
 
 }

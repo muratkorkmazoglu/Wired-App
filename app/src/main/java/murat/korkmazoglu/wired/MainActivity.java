@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
                 int connectionState = connection.getResponseCode();
 
                 if (connectionState == HttpURLConnection.HTTP_OK) {
+
                     BufferedInputStream bis = new BufferedInputStream(connection.getInputStream());
                     publishProgress("Haberler Hazırlanıyor...");
                     DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -68,22 +69,30 @@ public class MainActivity extends AppCompatActivity {
                     Document document = documentBuilder.parse(bis);
 
                     NodeList newsNodeList = document.getElementsByTagName("item");
-                    for (int i = 0; i < 4; i++) {
+                    NodeList nodeListMedia = null;
+                    String media = null;
+
+                    for (int i = 0; i < 5; i++) {
+
                         Element element = (Element) newsNodeList.item(i);
                         NodeList nodeListTitle = element.getElementsByTagName("title");
                         NodeList nodeListLink = element.getElementsByTagName("link");
                         NodeList nodeListDate = element.getElementsByTagName("pubDate");
                         NodeList nodeListCreator = element.getElementsByTagName("dc:creator");
-                        NodeList nodeListDescription = element.getElementsByTagName("description");
-                        NodeList nodeListMedia = element.getElementsByTagName("media:thumbnail");
+                        nodeListMedia = element.getElementsByTagName("media:thumbnail");
+
+                        if (nodeListMedia.getLength() > 0) {
+
+                            media = nodeListMedia.item(0).getAttributes().getNamedItem("url").getNodeValue();
+                        } else {
+                            media = "https://ersem.erciyes.edu.tr/admin/egitimimg/gorsel_yok.jpg";
+                        }
 
                         String title = nodeListTitle.item(0).getFirstChild().getNodeValue();
                         String link = nodeListLink.item(0).getFirstChild().getNodeValue();
                         String date = nodeListDate.item(0).getFirstChild().getNodeValue();
                         String creator = nodeListCreator.item(0).getFirstChild().getNodeValue();
-                        String description = nodeListDescription.item(0).getFirstChild().getNodeValue();
-                        String media = nodeListMedia.item(0).getAttributes().getNamedItem("url").getNodeValue();
-                        //Log.d("MEDİA",media.toString());
+
 
                         NewsModel model = new NewsModel();
                         model.setTitle(title);
@@ -92,27 +101,6 @@ public class MainActivity extends AppCompatActivity {
                         model.setDate(date);
                         model.setImage(media);
 
-//                        Pattern p = Pattern.compile(".*<img[^>]*src=\"([^\"]*)", Pattern.CASE_INSENSITIVE);
-//                        Matcher m = p.matcher(media);
-//                        String photoUrl = null;
-//
-//                        while (m.find()) {
-//                            photoUrl = m.group(1);
-//                            Bitmap bitmap = null;
-//
-//                            try {
-//                                URL urlResim = new URL(photoUrl.toString().trim());
-//                                InputStream is = urlResim.openConnection().getInputStream();
-//                                bitmap = BitmapFactory.decodeStream(is);
-//
-//                            } catch (MalformedURLException e) {
-//                                e.printStackTrace();
-//                            } catch (IOException e) {
-//                                e.printStackTrace();
-//                            }
-//
-//                            model.setImage(bitmap);
-//                        }
                         modelList.add(model);
                         publishProgress("Liste Güncelleniyor...");
                     }
@@ -142,15 +130,16 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            dialog=ProgressDialog.show(MainActivity.this,"Lütfen Bekleyiniz","İşlem Devam Ediyor",true);
+            dialog = ProgressDialog.show(MainActivity.this, "Lütfen Bekleyiniz", "İşlem Devam Ediyor", true);
         }
 
         @Override
         protected void onPostExecute(List<NewsModel> newsModels) {
             super.onPostExecute(newsModels);
-            CustomAdapter adapter=new CustomAdapter(MainActivity.this,newsModels);
+            CustomAdapter adapter = new CustomAdapter(MainActivity.this, newsModels);
             listView.setAdapter(adapter);
             dialog.cancel();
+            dialog.dismiss();
 
 
         }
@@ -160,5 +149,17 @@ public class MainActivity extends AppCompatActivity {
             super.onProgressUpdate(values);
             dialog.setMessage(values[0]);
         }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        dialog.dismiss();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        dialog.dismiss();
     }
 }
