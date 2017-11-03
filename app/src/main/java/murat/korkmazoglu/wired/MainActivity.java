@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.provider.DocumentsContract;
+
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -162,4 +163,5 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         dialog.dismiss();
     }
+
 }
