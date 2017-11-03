@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 
 public class Content extends AppCompatActivity {
@@ -53,7 +54,9 @@ public class Content extends AppCompatActivity {
     private List<String> paragraf;
     private LinearLayout linearLayout;
     private LinearLayout.LayoutParams llp;
-    private TextView titleText;
+    private TextView titleText, tvCount1, tvCount2, tvCount3, tvCount4, tvCount5;
+    private TextView tvEnglish1, tvEnglish2, tvEnglish3, tvEnglish4, tvEnglish5;
+    private TextView tvTurkish1, tvTurkish2, tvTurkish3, tvTurkish4, tvTurkish5;
     private ImageView imageView;
     private String text1, text2, text3, text4, text5;
     private int text1Count, text2Count, text3Count, text4Count, text5Count;
@@ -61,11 +64,26 @@ public class Content extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-
         setContentView(R.layout.content_layout);
         new FetchTitle().execute();
+
+        tvCount1 = (TextView) findViewById(R.id.tvCount1);
+        tvCount2 = (TextView) findViewById(R.id.tvCount2);
+        tvCount3 = (TextView) findViewById(R.id.tvCount3);
+        tvCount4 = (TextView) findViewById(R.id.tvCount4);
+        tvCount5 = (TextView) findViewById(R.id.tvCount5);
+
+        tvEnglish1 = (TextView) findViewById(R.id.tvEnglish1);
+        tvEnglish2 = (TextView) findViewById(R.id.tvEnglish2);
+        tvEnglish3 = (TextView) findViewById(R.id.tvEnglish3);
+        tvEnglish4 = (TextView) findViewById(R.id.tvEnglish4);
+        tvEnglish5 = (TextView) findViewById(R.id.tvEnglish5);
+
+        tvTurkish1 = (TextView) findViewById(R.id.tvTurkish1);
+        tvTurkish2 = (TextView) findViewById(R.id.tvTurkish2);
+        tvTurkish3 = (TextView) findViewById(R.id.tvTurkish3);
+        tvTurkish4 = (TextView) findViewById(R.id.tvTurkish4);
+        tvTurkish5 = (TextView) findViewById(R.id.tvTurkish5);
 
         linearLayout = (LinearLayout) findViewById(R.id.linearLayout);
         imageView = (ImageView) findViewById(R.id.myImageView);
@@ -75,12 +93,9 @@ public class Content extends AppCompatActivity {
 
         link = getIntent().getStringExtra("link");
         image = getIntent().getStringExtra("image");
-        Log.d("IMAGE", image.toString());
         title = getIntent().getStringExtra("title");
         titleText.setText(title);
         Picasso.with(Content.this).load(image).fit().into(imageView);
-
-
     }
 
     class FetchTitle extends AsyncTask<String, String, List<String>> {
@@ -120,7 +135,7 @@ public class Content extends AppCompatActivity {
                 textView.setTextColor(Color.BLACK);
                 linearLayout.addView(textView);
             }
-            progressDialog.cancel();
+
             Count();
 
 
@@ -185,105 +200,48 @@ public class Content extends AppCompatActivity {
         text5 = arr.get(4).getKey().toString();
         text5Count = arr.get(4).getValue();
 
-        System.out.println(text1.toString() + " : " + text1Count);
-        System.out.println(text2.toString() + " : " + text2Count);
-        System.out.println(text3.toString() + " : " + text3Count);
-        System.out.println(text4.toString() + " : " + text4Count);
-        System.out.println(text5.toString() + " : " + text5Count);
-        //String textToBeTranslated = "Computer";
-        String languagePair = "en-tr"; //English to French ("<source_language>-<target_language>")
-        //Executing the translation function
-        Translate(text1, languagePair);
-        Translate(text2, languagePair);
-        Translate(text3, languagePair);
-        Translate(text4, languagePair);
-        Translate(text5, languagePair);
+        String languagePair = "en-tr";
+
+        String translate1 = Translate(text1, languagePair);
+        String translate2 = Translate(text2, languagePair);
+        String translate3 = Translate(text3, languagePair);
+        String translate4 = Translate(text4, languagePair);
+        String translate5 = Translate(text5, languagePair);
+
+        tvCount1.setText(String.valueOf(text1Count));
+        tvCount2.setText(String.valueOf(text2Count));
+        tvCount3.setText(String.valueOf(text3Count));
+        tvCount4.setText(String.valueOf(text4Count));
+        tvCount5.setText(String.valueOf(text5Count));
+
+
+        tvEnglish1.setText(text1);
+        tvEnglish2.setText(text2);
+        tvEnglish3.setText(text3);
+        tvEnglish4.setText(text4);
+        tvEnglish5.setText(text5);
+
+        tvTurkish1.setText(translate1);
+        tvTurkish2.setText(translate2);
+        tvTurkish3.setText(translate3);
+        tvTurkish4.setText(translate4);
+        tvTurkish5.setText(translate5);
+        progressDialog.cancel();
 
     }
 
-    public void Translate(String textToBeTranslated, String languagePair) {
+    public String Translate(String textToBeTranslated, String languagePair) {
+        String translationResult = null;
         TranslatorBackgroundTask translatorBackgroundTask = new TranslatorBackgroundTask(getApplicationContext());
-        translatorBackgroundTask.execute(textToBeTranslated, languagePair); // Returns the translated text as a String
-        //Log.d("Translation Result",translationResult); // Logs the result in Android Monitor
+        try {
+            translationResult = translatorBackgroundTask.execute(textToBeTranslated, languagePair).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        return translationResult;
+
     }
-
-    public class TranslatorBackgroundTask extends AsyncTask<String, Void, String> {
-        //Declare Context
-        Context ctx;
-
-        //Set Context
-        TranslatorBackgroundTask(Context ctx) {
-            this.ctx = ctx;
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            //String variables
-            String textToBeTranslated = params[0];
-            String languagePair = params[1];
-
-            String jsonString;
-            String resultString=null;
-            StringBuilder jsonStringBuilder = null;
-
-            try {
-                //Set up the translation call URL
-                String yandexKey = "trnsl.1.1.20171103T125201Z.7a2810b7e8460567.a62e2eacb3f268cac2e88e24e23bbd64f8b29e43";
-                String yandexUrl = "https://translate.yandex.net/api/v1.5/tr.json/translate?key=" + yandexKey
-                        + "&text=" + textToBeTranslated + "&lang=" + languagePair;
-                URL yandexTranslateURL = new URL(yandexUrl);
-
-                //Set Http Conncection, Input Stream, and Buffered Reader
-                HttpURLConnection httpJsonConnection = (HttpURLConnection) yandexTranslateURL.openConnection();
-                InputStream inputStream = httpJsonConnection.getInputStream();
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-
-                //Set string builder and insert retrieved JSON result into it
-                jsonStringBuilder = new StringBuilder();
-                while ((jsonString = bufferedReader.readLine()) != null) {
-                    jsonStringBuilder.append(jsonString + "\n");
-                }
-
-                //Close and disconnect
-                bufferedReader.close();
-                inputStream.close();
-                httpJsonConnection.disconnect();
-
-                //Making result human readable
-                resultString = jsonStringBuilder.toString().trim();
-                //Getting the characters between [ and ]
-                resultString = resultString.substring(resultString.indexOf('[') + 1);
-                resultString = resultString.substring(0, resultString.indexOf("]"));
-                //Getting the characters between " and "
-                resultString = resultString.substring(resultString.indexOf("\"") + 1);
-                resultString = resultString.substring(0, resultString.indexOf("\""));
-
-                //Log.d("Translation Result:", resultString);
-
-
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return resultString;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            Log.d("Translation Result:", result.toString());
-        }
-
-        @Override
-        protected void onProgressUpdate(Void... values) {
-            super.onProgressUpdate(values);
-        }
-    }
-
 
 }
